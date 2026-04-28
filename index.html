@@ -1942,10 +1942,12 @@ function fpSubmit(){
   if(!n){alert('이름을 입력해주세요.');return}
   if(!p){alert('전화번호를 입력해주세요.');return}
   if(!pr){alert('개인정보 수집 및 이용에 동의해주세요.');return}
-  for(var i=1;i<=4;i++){var s=document.getElementById('fps'+i);if(s)s.className='fp-step';}
-  document.getElementById('fp-ty').style.display='block';
-  document.querySelectorAll('.fp-step-dot').forEach(function(d){d.className='fp-step-dot done'});
-  addLiveRow(n,p,fpData.type,fpData.region);
+  submitToAPI({name:n,phone:p,type:fpData.type,region:fpData.region,budget:fpData.budget},function(){
+    for(var i=1;i<=4;i++){var s=document.getElementById('fps'+i);if(s)s.className='fp-step';}
+    document.getElementById('fp-ty').style.display='block';
+    document.querySelectorAll('.fp-step-dot').forEach(function(d){d.className='fp-step-dot done'});
+    addLiveRow(n,p,fpData.type,fpData.region);
+  });
 }
 
 /* ═══════════════════════════
@@ -1988,10 +1990,41 @@ function bfSubmit(){
   if(!n){alert('이름을 입력해주세요.');return}
   if(!p){alert('전화번호를 입력해주세요.');return}
   if(!pr){alert('개인정보 수집 및 이용에 동의해주세요.');return}
-  for(var i=1;i<=4;i++){var s=document.getElementById('bfs'+i);if(s)s.className='bfr-step';}
-  document.getElementById('bfr-ty').style.display='block';
-  document.querySelectorAll('.bfr-sid').forEach(function(d){d.className='bfr-sid done'});
-  addLiveRow(n,p,bfData.type,bfData.region);
+  submitToAPI({name:n,phone:p,type:bfData.type,region:bfData.region,budget:bfData.budget},function(){
+    for(var i=1;i<=4;i++){var s=document.getElementById('bfs'+i);if(s)s.className='bfr-step';}
+    document.getElementById('bfr-ty').style.display='block';
+    document.querySelectorAll('.bfr-sid').forEach(function(d){d.className='bfr-sid done'});
+    addLiveRow(n,p,bfData.type,bfData.region);
+  });
+}
+
+/* ═══════════════════════════
+   API SUBMIT (공통)
+═══════════════════════════ */
+function submitToAPI(data, onSuccess){
+  // 중복 제출 방지
+  if(window._submitting)return;
+  window._submitting=true;
+
+  fetch('/api/submit',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  }).then(function(res){
+    return res.json().then(function(json){return {ok:res.ok,json:json}});
+  }).then(function(r){
+    window._submitting=false;
+    if(r.ok&&r.json.success){
+      onSuccess();
+    }else{
+      var msg=(r.json&&r.json.error)||'신청 처리 중 오류가 발생했습니다.';
+      alert(msg+'\n번거로우시지만 직접 전화 주시면 빠르게 안내드리겠습니다.');
+    }
+  }).catch(function(err){
+    window._submitting=false;
+    console.error('Submit error:',err);
+    alert('네트워크 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.');
+  });
 }
 
 /* ═══════════════════════════
