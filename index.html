@@ -2161,8 +2161,8 @@ function submitToAPI(data, onSuccess){
     if(r.ok&&r.json.success){
       onSuccess();
     }else{
-      var msg=(r.json&&r.json.error)||'신청 처리 중 오류가 발생했습니다.';
-      alert(msg+'\n번거로우시지만 직접 전화 주시면 빠르게 안내드리겠습니다.');
+      var msg=(r.json&&r.json.error)||'신청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      alert(msg);
     }
   }).catch(function(err){
     window._submitting=false;
