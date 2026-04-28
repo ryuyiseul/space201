@@ -264,6 +264,20 @@ h1.hero-title strong{font-weight:400;display:block;color:var(--gold3)}
 }
 .fp-input:focus{border-color:var(--gold)}
 .fp-input::placeholder{color:var(--cream3)}
+.fp-input.error{border-color:#E55353!important;background:#FFF5F5}
+.fp-input.error:focus{border-color:#E55353!important}
+.bfr-input.error{border-color:#E55353!important;background:rgba(229,83,83,.05)}
+.bfr-input.error:focus{border-color:#E55353!important}
+.input-err-msg{
+  display:none;font-size:.7rem;color:#E55353;
+  margin-top:.3rem;letter-spacing:.02em;line-height:1.4;
+}
+.input-err-msg.show{display:block;animation:errShake .3s}
+@keyframes errShake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-3px)}
+  75%{transform:translateX(3px)}
+}
 
 .fp-privacy{
   font-size:.74rem;color:var(--muted);line-height:1.65;
@@ -1315,11 +1329,13 @@ footer{
           <div class="fp-q">연락처 입력</div>
           <div class="fp-input-row">
             <label class="fp-label">이름</label>
-            <input class="fp-input" type="text" id="fp-name" placeholder="홍길동">
+            <input class="fp-input" type="text" id="fp-name" placeholder="홍길동" maxlength="10" oninput="validateName(this,'fp-name-err')" onblur="validateName(this,'fp-name-err',true)">
+            <div class="input-err-msg" id="fp-name-err"></div>
           </div>
           <div class="fp-input-row">
             <label class="fp-label">전화번호</label>
-            <input class="fp-input" type="tel" id="fp-phone" placeholder="010-0000-0000">
+            <input class="fp-input" type="tel" id="fp-phone" placeholder="010-0000-0000" maxlength="13" oninput="formatPhone(this);validatePhone(this,'fp-phone-err')" onblur="validatePhone(this,'fp-phone-err',true)">
+            <div class="input-err-msg" id="fp-phone-err"></div>
           </div>
           <label class="fp-privacy">
             <input type="checkbox" id="fp-priv">
@@ -1675,11 +1691,13 @@ footer{
         <div class="bfr-two-col">
           <div class="bfr-irow">
             <label class="bfr-ilabel">이름</label>
-            <input class="bfr-input" type="text" id="bf-name" placeholder="홍길동">
+            <input class="bfr-input" type="text" id="bf-name" placeholder="홍길동" maxlength="10" oninput="validateName(this,'bf-name-err')" onblur="validateName(this,'bf-name-err',true)">
+            <div class="input-err-msg" id="bf-name-err"></div>
           </div>
           <div class="bfr-irow">
             <label class="bfr-ilabel">전화번호</label>
-            <input class="bfr-input" type="tel" id="bf-phone" placeholder="010-0000-0000">
+            <input class="bfr-input" type="tel" id="bf-phone" placeholder="010-0000-0000" maxlength="13" oninput="formatPhone(this);validatePhone(this,'bf-phone-err')" onblur="validatePhone(this,'bf-phone-err',true)">
+            <div class="input-err-msg" id="bf-phone-err"></div>
           </div>
         </div>
         <label class="bfr-priv">
@@ -1936,12 +1954,21 @@ function fpGo(from,to){
   }
 }
 function fpSubmit(){
-  var n=document.getElementById('fp-name').value.trim();
-  var p=document.getElementById('fp-phone').value.trim();
+  var nameInput=document.getElementById('fp-name');
+  var phoneInput=document.getElementById('fp-phone');
   var pr=document.getElementById('fp-priv').checked;
-  if(!n){alert('이름을 입력해주세요.');return}
-  if(!p){alert('전화번호를 입력해주세요.');return}
+
+  // 검증 (blur 모드로 강제 - 모든 에러 표시)
+  var nameOk=validateName(nameInput,'fp-name-err',true);
+  var phoneOk=validatePhone(phoneInput,'fp-phone-err',true);
+
+  if(!nameOk){nameInput.focus();return}
+  if(!phoneOk){phoneInput.focus();return}
   if(!pr){alert('개인정보 수집 및 이용에 동의해주세요.');return}
+
+  var n=nameInput.value.trim();
+  var p=phoneInput.value.trim();
+
   submitToAPI({name:n,phone:p,type:fpData.type,region:fpData.region,budget:fpData.budget},function(){
     for(var i=1;i<=4;i++){var s=document.getElementById('fps'+i);if(s)s.className='fp-step';}
     document.getElementById('fp-ty').style.display='block';
@@ -1984,18 +2011,135 @@ function bfGo(from,to){
   document.getElementById('bfr-slabel').textContent='STEP '+to+' / 4';
 }
 function bfSubmit(){
-  var n=document.getElementById('bf-name').value.trim();
-  var p=document.getElementById('bf-phone').value.trim();
+  var nameInput=document.getElementById('bf-name');
+  var phoneInput=document.getElementById('bf-phone');
   var pr=document.getElementById('bf-priv').checked;
-  if(!n){alert('이름을 입력해주세요.');return}
-  if(!p){alert('전화번호를 입력해주세요.');return}
+
+  var nameOk=validateName(nameInput,'bf-name-err',true);
+  var phoneOk=validatePhone(phoneInput,'bf-phone-err',true);
+
+  if(!nameOk){nameInput.focus();return}
+  if(!phoneOk){phoneInput.focus();return}
   if(!pr){alert('개인정보 수집 및 이용에 동의해주세요.');return}
+
+  var n=nameInput.value.trim();
+  var p=phoneInput.value.trim();
+
   submitToAPI({name:n,phone:p,type:bfData.type,region:bfData.region,budget:bfData.budget},function(){
     for(var i=1;i<=4;i++){var s=document.getElementById('bfs'+i);if(s)s.className='bfr-step';}
     document.getElementById('bfr-ty').style.display='block';
     document.querySelectorAll('.bfr-sid').forEach(function(d){d.className='bfr-sid done'});
     addLiveRow(n,p,bfData.type,bfData.region);
   });
+}
+
+/* ═══════════════════════════
+   INPUT VALIDATION
+═══════════════════════════ */
+// 이름 검증: 한글 2자 이상, 영문/숫자/특수문자 차단
+function validateName(input, errId, isBlur){
+  var v = input.value.trim();
+  var errEl = document.getElementById(errId);
+
+  // 입력 중에는 빈 값이어도 에러 안 띄움 (blur 시에만)
+  if(!v){
+    if(isBlur){
+      input.classList.add('error');
+      errEl.textContent='이름을 입력해주세요.';
+      errEl.classList.add('show');
+    }else{
+      input.classList.remove('error');
+      errEl.classList.remove('show');
+    }
+    return false;
+  }
+
+  // 한글만 허용 (자음/모음 단독 차단)
+  if(!/^[가-힣]{2,10}$/.test(v)){
+    input.classList.add('error');
+    if(/[a-zA-Z]/.test(v)){
+      errEl.textContent='이름은 한글로 입력해주세요.';
+    }else if(/[ㄱ-ㅎㅏ-ㅣ]/.test(v)){
+      errEl.textContent='완성된 한글로 입력해주세요.';
+    }else if(v.length<2){
+      errEl.textContent='이름은 2자 이상 입력해주세요.';
+    }else{
+      errEl.textContent='올바른 이름을 입력해주세요.';
+    }
+    errEl.classList.add('show');
+    return false;
+  }
+
+  input.classList.remove('error');
+  errEl.classList.remove('show');
+  return true;
+}
+
+// 전화번호 자동 포맷팅 (010-0000-0000)
+function formatPhone(input){
+  var v = input.value.replace(/[^0-9]/g,'');
+  if(v.length>11)v=v.slice(0,11);
+
+  var formatted='';
+  if(v.length<4){
+    formatted=v;
+  }else if(v.length<8){
+    formatted=v.slice(0,3)+'-'+v.slice(3);
+  }else{
+    formatted=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7);
+  }
+  input.value=formatted;
+}
+
+// 전화번호 검증: 010-XXXX-XXXX 형식
+function validatePhone(input, errId, isBlur){
+  var v = input.value.trim();
+  var errEl = document.getElementById(errId);
+  var nums = v.replace(/[^0-9]/g,'');
+
+  if(!v){
+    if(isBlur){
+      input.classList.add('error');
+      errEl.textContent='전화번호를 입력해주세요.';
+      errEl.classList.add('show');
+    }else{
+      input.classList.remove('error');
+      errEl.classList.remove('show');
+    }
+    return false;
+  }
+
+  // 010으로 시작하지 않으면
+  if(!nums.startsWith('010')){
+    input.classList.add('error');
+    errEl.textContent='010으로 시작하는 휴대폰 번호를 입력해주세요.';
+    errEl.classList.add('show');
+    return false;
+  }
+
+  // 11자리가 아니면 (입력 중일 땐 알리지 않고, blur 시에만)
+  if(nums.length<11){
+    if(isBlur){
+      input.classList.add('error');
+      errEl.textContent='전화번호 11자리를 모두 입력해주세요.';
+      errEl.classList.add('show');
+    }else{
+      input.classList.remove('error');
+      errEl.classList.remove('show');
+    }
+    return false;
+  }
+
+  if(nums.length!==11){
+    input.classList.add('error');
+    errEl.textContent='전화번호 형식이 올바르지 않습니다.';
+    errEl.classList.add('show');
+    return false;
+  }
+
+  input.classList.remove('error');
+  errEl.classList.remove('show');
+  return true;
 }
 
 /* ═══════════════════════════
